@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dò Mìn</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game-board {
+            display: grid;
+            margin: 20px auto;
+            border: 2px solid #333;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .cell {
+            border: 1px solid #ccc;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background-color 0.3s;
+        }
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+        .mine {
+            background-color: red;
+        }
+        .revealed {
+            background-color: #eee;
+        }
+        .flag {
+            background-color: yellow;
+        }
+        #timer, #message {
+            font-size: 24px;
+            margin: 10px 0;
+            color: #444;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Dò Mìn</h1>
+<div id="game-container">
+    <label for="map-size">Chọn kích thước bản đồ:</label>
+    <select id="map-size">
+        <option value="5">5x5</option>
+        <option value="10" selected>10x10</option>
+        <option value="15">15x15</option>
+        <option value="30">30x30</option> <!-- Thêm tùy chọn 30x30 -->
+    </select>
+    <button id="start-button">Bắt đầu trò chơi</button>
+    <div id="timer">Thời gian: 0 giây</div>
+    <div id="message"></div>
+    <div id="game-board"></div>
+</div>
+<script>
+    let boardSize = 10;
+    let mineCount = 10;
+    let board = [];
+    let revealedCount = 0;
+    let timer;
+    let seconds = 0;
+    let gameStateStack = [];
+
+    document.getElementById('map-size').addEventListener('change', (e) => {
+        boardSize = parseInt(e.target.value);
+        mineCount = Math.floor(boardSize * boardSize / 5);
+    });
+
+    function startGame() {
+        try {
+            board = Array.from({ length: boardSize }, () => Array(boardSize).fill(0));
+            revealedCount = 0;
+            seconds = 0;
+            gameStateStack = [];
+
+            for (let i = 0; i < mineCount; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * boardSize);
+                    y = Math.floor(Math.random() * boardSize);
+                } while (board[x][y] === '💣');
+                board[x][y] = '💣';
+                updateNeighbors(x, y);
+            }
+
+            renderBoard();
+            startTimer();
+            document.getElementById('message').innerText = '';
+        } catch (error) {
+            console.error("Lỗi khi bắt đầu trò chơi: ", error);
+        }
+    }
+
+    function startTimer() {
+        clearInterval(timer);
+        timer = setInterval(() => {
+            seconds++;
+            document.getElementById('timer').innerText = `Thời gian: ${seconds} giây`;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timer);
+    }
+
+    function updateNeighbors(x, y) {
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (x + i >= 0 && x + i < boardSize && y + j >= 0 && y + j < boardSize && board[x + i][y + j] !== '💣') {
+                    board[x + i][y + j]++;
+                }
+            }
+        }
+    }
+
+    function renderBoard() {
+        const gameBoard = document.getElementById('game-board');
+        gameBoard.innerHTML = '';
+        gameBoard.style.gridTemplateColumns = `repeat(${boardSize}, 40px)`;
+        board.forEach((row, x) => {
+            row.forEach((cell, y) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.onclick = () => revealCell(x, y);
+                cellElement.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    toggleFlag(x, y);
+                };
+                gameBoard.appendChild(cellElement);
+            });
+        });
+    }
+
+    function revealCell(x, y) {
+        try {
+            const cell = board[x][y];
+            if (cell === '💣') {
+                showMine(x, y);
+                alert('Bạn đã thua! Nhấn OK để chơi lại.');
+                stopTimer();
+                startGame();
+                return;
+            }
+            if (cell === 0) {
+                revealSurrounding(x, y);
+            } else {
+                const cellElements = document.getElementsByClassName('cell');
+                cellElements[x * boardSize + y].innerText = cell > 0 ? cell : '';
+                cellElements[x * boardSize + y].classList.add('revealed');
+                revealedCount++;
+            }
+
+            if (revealedCount === boardSize * boardSize - mineCount) {
+                alert('Bạn đã thắng!');
+                stopTimer();
+                startGame();
+            }
+        } catch (error) {
+            console.error("Lỗi khi mở ô: ", error);
+        }
+    }
+
+    function showMine(x, y) {
+        const cellElements = document.getElementsByClassName('cell');
+        for (let i = 0; i < boardSize; i++) {
+            for (let j = 0; j < boardSize; j++) {
+                if (board[i][j] === '💣') {
+                    cellElements[i * boardSize + j].innerText = '💣';
+                    cellElements[i * boardSize + j].classList.add('mine');
+                }
+            }
+        }
+    }
+
+    function revealSurrounding(x, y) {
+        const queue = [[x, y]];
+        const cellElements = document.getElementsByClassName('cell');
+
+        while (queue.length > 0) {
+            const [currX, currY] = queue.shift();
+            if (currX < 0 || currX >= boardSize || currY < 0 || currY >= boardSize) continue;
+            if (cellElements[currX * boardSize + currY].classList.contains('revealed')) continue;
+
+            const cell = board[currX][currY];
+            cellElements[currX * boardSize + currY].classList.add('revealed');
+            if (cell > 0) {
+                cellElements[currX * boardSize + currY].innerText = cell;
+                revealedCount++;
+            } else {
+                revealedCount++;
+                queue.push(...getNeighbors(currX, currY));
+            }
+        }
+    }
+
+    function toggleFlag(x, y) {
+        const cellElements = document.getElementsByClassName('cell');
+        const cellElement = cellElements[x * boardSize + y];
+        if (!cellElement.classList.contains('revealed')) {
+            cellElement.classList.toggle('flag');
+        }
+    }
+
+    // Thêm sự kiện cho phím tắt
+    document.addEventListener('keydown', (event) => {
+        // Kiểm tra nếu phím S được nhấn và không có phím điều khiển khác
+        if (event.key === 's' && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+            event.preventDefault(); // Ngăn chặn hành động mặc định
+            saveGame(); // Gọi hàm saveGame
+        }
+    });
+
+    // Hàm saveGame đã được cập nhật
+    function saveGame() {
+        try {
+            const gameState = {
+                board,
+                revealedCount,
+                seconds,
+                boardSize,
+                mineCount
+            };
+            const gameStateJSON = JSON.stringify(gameState);
+            
+            const blob = new Blob([gameStateJSON], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'minesweeper-save.json';  // Tên file tải xuống
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // Giải phóng URL
+            
+            document.getElementById('message').innerText = 'Trò chơi đã được tải về!';
+        } catch (error) {
+            console.error("Lỗi khi tải trò chơi: ", error);
+        }
+    }
+
+    function loadGame() {
+        try {
+            const savedGame = localStorage.getItem('minesweeper');
+            if (savedGame) {
+                const gameState = JSON.parse(savedGame);
+                board = gameState.board;
+                revealedCount = gameState.revealedCount;
+                seconds = gameState.seconds;
+                boardSize = gameState.boardSize;
+                mineCount = gameState.mineCount;
+
+                renderBoard();
+                document.getElementById('timer').innerText = `Thời gian: ${seconds} giây`;
+                startTimer();
+                document.getElementById('message').innerText = 'Trò chơi đã được tải!';
+            } else {
+                alert('Không có trò chơi nào để tải!');
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải trò chơi: ", error);
+        }
+    }
+
+    document.getElementById('start-button').onclick = startGame;
+    // Thêm nút tải trò chơi nếu cần
+    // document.getElementById('load-button').onclick = loadGame;
+
+</script>
+</body>
+</html>

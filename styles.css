@@ -1,0 +1,156 @@
+/* Reset các thuộc tính mặc định */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Toàn bộ trang */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f7f7f7;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    background: linear-gradient(to bottom, #8e9eab, #eef2f3);
+}
+
+/* Tiêu đề game */
+h1 {
+    font-size: 36px;
+    margin-bottom: 30px;
+    color: #4a4a4a;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Phần menu cấu hình game */
+#menu {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Các select và nút trong menu */
+#menu select, #menu button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 10px;
+}
+
+#menu select:focus, #menu button:hover {
+    background-color: #45a049;
+}
+
+/* Hiển thị bảng game */
+#game-board {
+    display: grid;
+    gap: 5px;
+    margin-top: 20px;
+    grid-template-columns: repeat(10, 30px); /* Mặc định 10x10 */
+    background-color: #dcdcdc;
+    padding: 5px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Các ô trong bảng game */
+.cell {
+    width: 30px;
+    height: 30px;
+    background-color: #e0e0e0;
+    border: 1px solid #bbb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+}
+
+.cell:hover {
+    background-color: #c4c4c4;
+}
+
+/* Căn giữa nội dung trong ô */
+.cell.revealed::before {
+    content: attr(data-mines);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Hiệu ứng khi bấm vào ô */
+.cell.revealed {
+    background-color: #f4f4f4;
+    cursor: default;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Các trạng thái của ô */
+.cell.mine {
+    background-color: #e74c3c;
+    color: white;
+    font-weight: bold;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.cell.safe {
+    background-color: #f0f0f0;
+}
+
+.cell.flagged {
+    background-color: #f39c12;
+    color: white;
+}
+
+/* Căn giữa nội dung khi có số mìn */
+.cell.revealed {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+}
+
+/* Thêm màu sắc cho các số mìn (từ 1 đến 8) */
+.cell[data-mines="1"] {
+    color: #2d7d7d;
+}
+
+.cell[data-mines="2"] {
+    color: #2c6b2f;
+}
+
+.cell[data-mines="3"] {
+    color: #d43f00;
+}
+
+.cell[data-mines="4"] {
+    color: #1e3a8a;
+}
+
+.cell[data-mines="5"] {
+    color: #9e1b32;
+}
+
+.cell[data-mines="6"] {
+    color: #1c7e7c;
+}
+
+.cell[data-mines="7"] {
+    color: #0c5c9a;
+}
+
+.cell[data-mines="8"] {
+    color: #703e3e;
+}
